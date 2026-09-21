@@ -1,0 +1,23 @@
+ELENA ROSTOVA
+    Email: elena.rostova@cloudtech.io | Phone: +1 (555) 789-0123
+    GitHub: github.com/elenarostova | LinkedIn: linkedin.com/in/elena-rostova
+    
+    PROFESSIONAL SUMMARY
+    Cloud Architect & DevOps Engineer with 4 years of hands-on experience building automated CI/CD pipelines, containerizing microservices with Docker, and provisioning resilient cloud infrastructure on AWS using Terraform.
+    
+    CORE SKILLS
+    AWS, Docker, Linux, Bash, CI/CD, Git, GitHub Actions, Terraform, Python, PostgreSQL, REST API
+    
+    EXPERIENCE
+    DevOps Specialist | CloudSphere Inc (2022 - Present)
+    - Orchestrated multi-region AWS cloud migrations and reduced monthly cloud spend by 22%.
+    - Designed and implemented automated CI/CD deployment pipelines using GitHub Actions and Docker.
+    - Automated server configurations using Linux shell scripts and Terraform.
+    - Engineered monitoring metrics and alert thresholds using CloudWatch and Prometheus.
+    
+    Junior Systems Administrator | NetVantage (2020 - 2022)
+    - Administered Linux server fleets and resolved infrastructure outages.
+    - Scripted routine backup and data validation tasks in Bash and Python.
+    
+    EDUCATION
+    Bachelor of Science in Computer Engineering (2020)

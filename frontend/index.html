@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ResuMatch AI - Intelligent Resume Analyzer & ATS Dashboard</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            },
+            dark: {
+              bg: '#0b0f19',
+              card: '#111827',
+              border: '#1f293d',
+              input: '#1a2234'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen font-sans flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-[#0b0f19]/80 border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <span class="font-display font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+            ResuMatch <span class="text-indigo-400 font-extrabold">AI</span>
+          </span>
+          <span class="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-indigo-950/60 border border-indigo-700/50 text-indigo-300 font-medium">ATS v2.4</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center space-x-1 sm:space-x-2 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800">
+        <button id="nav-analyzer" onclick="switchTab('analyzer')" class="nav-tab active-tab flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all">
+          <i data-lucide="file-search" class="w-4 h-4"></i>
+          <span class="hidden md:inline">Analyze Resume</span>
+        </button>
+        <button id="nav-dashboard" onclick="switchTab('dashboard')" class="nav-tab flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span class="hidden md:inline">Admin CRM</span>
+        </button>
+        <button id="nav-jobs" onclick="switchTab('jobs')" class="nav-tab flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all">
+          <i data-lucide="briefcase" class="w-4 h-4"></i>
+          <span class="hidden md:inline">Job Openings</span>
+        </button>
+        <button id="nav-analytics" onclick="switchTab('analytics')" class="nav-tab flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span class="hidden md:inline">Analytics</span>
+        </button>
+      </nav>
+
+      <!-- System Live Pill -->
+      <div class="hidden lg:flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-xs text-slate-400 font-mono">FastAPI + SQLite Active</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: RESUME ANALYZER (Candidate / Recruiter Screen) -->
+    <!-- ============================================================ -->
+    <div id="tab-analyzer" class="tab-content block space-y-8 animate-fade-in">
+      
+      <!-- Hero Banner -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-slate-900 border border-slate-800/80 p-6 md:p-8">
+        <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="max-w-2xl">
+          <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            AI-Powered Resume Analysis & Skill Gap Matcher
+          </h1>
+          <p class="mt-2 text-slate-400 text-sm sm:text-base leading-relaxed">
+            Upload candidate resumes (PDF, DOCX, TXT) and compare against target job descriptions. Extract 500+ tech skills, compute ATS readability scores, and get actionable suggestions for missing skills.
+          </p>
+        </div>
+      </div>
+
+      <!-- Upload & Job Selection Form Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left: Upload Card -->
+        <div class="lg:col-span-6 space-y-6">
+          <div class="glass-card rounded-2xl p-6 border border-slate-800/80 bg-slate-900/60 backdrop-blur-md">
+            <h2 class="text-lg font-semibold text-white flex items-center space-x-2 mb-4">
+              <i data-lucide="upload-cloud" class="w-5 h-5 text-indigo-400"></i>
+              <span>1. Upload Candidate Resume</span>
+            </h2>
+
+            <!-- Drag & Drop Box -->
+            <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer transition-all duration-200 bg-slate-950/40 hover:bg-slate-900/50 group">
+              <input type="file" id="resume-file" class="hidden" accept=".pdf,.docx,.doc,.txt" />
+              
+              <div id="drop-zone-idle" class="flex flex-col items-center">
+                <div class="w-14 h-14 rounded-2xl bg-slate-800/80 group-hover:bg-indigo-600/20 group-hover:text-indigo-400 text-slate-400 flex items-center justify-center transition-all duration-200 mb-4 shadow-inner">
+                  <i data-lucide="file-up" class="w-7 h-7"></i>
+                </div>
+                <p class="font-medium text-slate-200 group-hover:text-indigo-300">
+                  Click to browse or drag and drop
+                </p>
+                <p class="text-xs text-slate-400 mt-1">Supports PDF, DOCX, DOC, TXT (up to 10MB)</p>
+              </div>
+
+              <!-- Selected File Preview -->
+              <div id="drop-zone-selected" class="hidden flex items-center justify-between bg-slate-800/90 rounded-lg p-3 border border-indigo-500/30">
+                <div class="flex items-center space-x-3 truncate">
+                  <div class="w-9 h-9 rounded-lg bg-indigo-600/30 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                  </div>
+                  <div class="text-left truncate">
+                    <p id="selected-file-name" class="text-sm font-medium text-white truncate"></p>
+                    <p id="selected-file-size" class="text-xs text-slate-400"></p>
+                  </div>
+                </div>
+                <button type="button" onclick="clearSelectedFile(event)" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Pre-loaded Demo Resumes Quick Pick -->
+            <div class="mt-4 pt-4 border-t border-slate-800">
+              <p class="text-xs text-slate-400 mb-2 font-medium">Or test with a sample resume:</p>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="loadSampleResume('fullstack')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-900/40 hover:border-indigo-600 border border-slate-700 text-slate-300 transition-colors flex items-center space-x-1.5">
+                  <i data-lucide="file-code" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>Alex Morgan (Fullstack)</span>
+                </button>
+                <button type="button" onclick="loadSampleResume('junior')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-900/40 hover:border-indigo-600 border border-slate-700 text-slate-300 transition-colors flex items-center space-x-1.5">
+                  <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>David Chen (Junior Web)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Target Job Description Card -->
+        <div class="lg:col-span-6 space-y-6">
+          <div class="glass-card rounded-2xl p-6 border border-slate-800/80 bg-slate-900/60 backdrop-blur-md">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold text-white flex items-center space-x-2">
+                <i data-lucide="briefcase" class="w-5 h-5 text-indigo-400"></i>
+                <span>2. Target Job Description</span>
+              </h2>
+              <div class="flex items-center space-x-1 bg-slate-800 p-1 rounded-lg border border-slate-700 text-xs">
+                <button type="button" id="mode-saved-btn" onclick="toggleJobMode('saved')" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-medium transition-all">
+                  Existing Role
+                </button>
+                <button type="button" id="mode-custom-btn" onclick="toggleJobMode('custom')" class="px-2.5 py-1 rounded text-slate-400 hover:text-white font-medium transition-all">
+                  Custom Text
+                </button>
+              </div>
+            </div>
+
+            <!-- Mode 1: Choose from Saved Job Postings -->
+            <div id="job-mode-saved" class="space-y-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Select Active Job Opening</label>
+                <select id="job-selector" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                  <option value="">Loading job openings...</option>
+                </select>
+              </div>
+              <div id="selected-job-preview" class="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80 text-xs text-slate-300 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span id="preview-job-department" class="text-indigo-400 font-medium"></span>
+                  <span id="preview-job-exp" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400"></span>
+                </div>
+                <p id="preview-job-desc" class="line-clamp-3 text-slate-400 leading-relaxed"></p>
+                <div id="preview-job-skills" class="flex flex-wrap gap-1 pt-1"></div>
+              </div>
+            </div>
+
+            <!-- Mode 2: Custom Job Description Text Area -->
+            <div id="job-mode-custom" class="hidden space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Target Job Title</label>
+                <input type="text" id="custom-job-title" placeholder="e.g. Senior Backend Engineer" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Paste Job Description Requirements</label>
+                <textarea id="custom-job-desc" rows="5" placeholder="Paste requirements, skills, responsibilities..." class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-6">
+              <button type="button" id="btn-analyze" onclick="performAnalysis()" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all duration-200">
+                <i data-lucide="cpu" class="w-4 h-4"></i>
+                <span id="btn-analyze-text">Run AI Resume Analysis</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- ANALYSIS RESULTS SECTION (Rendered dynamically) -->
+      <!-- ============================================================ -->
+      <div id="analysis-results-section" class="hidden space-y-8 pt-4">
+        
+        <!-- Top Summary Bar: Candidate Profile & Overall Match Gauge -->
+        <div class="glass-card rounded-2xl p-6 md:p-8 border border-slate-800 bg-slate-900/80 backdrop-blur-md">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <!-- Candidate Info -->
+            <div class="lg:col-span-7 space-y-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-lg">
+                  <span id="res-avatar-initials">--</span>
+                </div>
+                <div>
+                  <h3 id="res-candidate-name" class="font-display text-xl font-bold text-white"></h3>
+                  <p id="res-job-title" class="text-sm text-indigo-400 font-medium"></p>
+                </div>
+              </div>
+
+              <!-- Contact Pills -->
+              <div class="flex flex-wrap gap-2 text-xs">
+                <span id="res-email-pill" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700">
+                  <i data-lucide="mail" class="w-3.5 h-3.5 text-slate-400"></i>
+                  <span id="res-email"></span>
+                </span>
+                <span id="res-phone-pill" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700">
+                  <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i>
+                  <span id="res-phone"></span>
+                </span>
+                <span id="res-exp-pill" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span id="res-experience"></span>
+                </span>
+              </div>
+
+              <div id="res-links" class="flex flex-wrap gap-2 text-xs pt-1"></div>
+            </div>
+
+            <!-- Overall Circular Score & Match Verdict -->
+            <div class="lg:col-span-5 flex flex-col sm:flex-row items-center justify-end space-y-4 sm:space-y-0 sm:space-x-6 border-t lg:border-t-0 lg:border-l border-slate-800 lg:pl-8">
+              <div class="relative w-32 h-32 flex items-center justify-center flex-shrink-0">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" class="text-slate-800 stroke-current" stroke-width="8" fill="transparent"></circle>
+                  <circle id="score-circle-progress" cx="50" cy="50" r="40" class="stroke-current text-indigo-500 transition-all duration-1000 ease-out" stroke-width="8" stroke-linecap="round" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
+                </svg>
+                <div class="absolute flex flex-col items-center justify-center">
+                  <span id="res-overall-score" class="text-3xl font-display font-extrabold text-white">0</span>
+                  <span class="text-[10px] text-slate-400 uppercase tracking-wider">Score / 100</span>
+                </div>
+              </div>
+              <div class="text-center sm:text-left space-y-1">
+                <div id="res-verdict-badge" class="inline-block px-3 py-1 rounded-full text-xs font-semibold"></div>
+                <p id="res-verdict-desc" class="text-xs text-slate-400 max-w-[200px] leading-relaxed"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Mini Breakdown Meters -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
+            <div class="p-3 rounded-xl bg-slate-950/40 border border-slate-800/50">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="text-slate-400">Skills Match</span>
+                <span id="res-score-skills" class="font-bold text-white">0%</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="bar-skills" class="h-full bg-indigo-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950/40 border border-slate-800/50">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="text-slate-400">Experience Fit</span>
+                <span id="res-score-exp" class="font-bold text-white">0%</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="bar-exp" class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950/40 border border-slate-800/50">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="text-slate-400">ATS Readability</span>
+                <span id="res-score-ats" class="font-bold text-white">0%</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="bar-ats" class="h-full bg-blue-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950/40 border border-slate-800/50">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="text-slate-400">Domain Match</span>
+                <span id="res-score-domain" class="font-bold text-white">0%</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="bar-domain" class="h-full bg-purple-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills Comparison Grid: Matched vs Missing -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Matched Skills Card -->
+          <div class="glass-card rounded-2xl p-6 border border-emerald-900/30 bg-emerald-950/10 backdrop-blur-md">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-base font-semibold text-emerald-400 flex items-center space-x-2">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                <span>Matched Skills (<span id="count-matched">0</span>)</span>
+              </h4>
+              <span class="text-xs px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/40 font-medium">Found in Resume</span>
+            </div>
+            <div id="container-matched-skills" class="flex flex-wrap gap-2 min-h-[80px]"></div>
+          </div>
+
+          <!-- Missing Skills Card -->
+          <div class="glass-card rounded-2xl p-6 border border-rose-900/30 bg-rose-950/10 backdrop-blur-md">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-base font-semibold text-rose-400 flex items-center space-x-2">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-rose-400"></i>
+                <span>Missing Required Skills (<span id="count-missing">0</span>)</span>
+              </h4>
+              <span class="text-xs px-2 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-800/40 font-medium">Needs Attention</span>
+            </div>
+            <div id="container-missing-skills" class="flex flex-wrap gap-2 min-h-[80px]"></div>
+          </div>
+        </div>
+
+        <!-- AI Missing-Skill Recommendations & Learning Path -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 bg-slate-900/60 backdrop-blur-md">
+          <div class="flex items-center space-x-2 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
+              <i data-lucide="compass" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 class="text-base font-semibold text-white">Missing-Skill Improvement & Learning Recommendations</h4>
+              <p class="text-xs text-slate-400">Targeted courses, certifications, and phrasing tips to close candidate qualification gaps.</p>
+            </div>
+          </div>
+          
+          <div id="container-suggestions" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- ATS Compliance Checklist -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 bg-slate-900/60 backdrop-blur-md">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2">
+              <div class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h4 class="text-base font-semibold text-white">Applicant Tracking System (ATS) Health Check</h4>
+                <p class="text-xs text-slate-400">Formatting compatibility, keyword density, and contact audit.</p>
+              </div>
+            </div>
+            <span id="ats-word-badge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-mono"></span>
+          </div>
+
+          <div id="container-ats-checks" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        </div>
+
+        <!-- All Extracted Skills by Category (Full Profile Breakdown) -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 bg-slate-900/60 backdrop-blur-md">
+          <h4 class="text-base font-semibold text-white mb-3 flex items-center space-x-2">
+            <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i>
+            <span>All Extracted Resume Skills by Category</span>
+          </h4>
+          <div id="container-all-skills" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- TAB 2: ADMIN & RECRUITER DASHBOARD CRM -->
+    <!-- ============================================================ -->
+    <div id="tab-dashboard" class="tab-content hidden space-y-8 animate-fade-in">
+      
+      <!-- KPI Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 bg-slate-900/60 flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="file-check" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Resumes</p>
+            <p id="kpi-total" class="text-2xl font-display font-bold text-white mt-0.5">0</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 bg-slate-900/60 flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="gauge" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Average Match</p>
+            <p id="kpi-avg" class="text-2xl font-display font-bold text-white mt-0.5">0%</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 bg-slate-900/60 flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="award" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Shortlisted</p>
+            <p id="kpi-shortlisted" class="text-2xl font-display font-bold text-white mt-0.5">0</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-5 border border-slate-800/80 bg-slate-900/60 flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="hourglass" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Under Review</p>
+            <p id="kpi-review" class="text-2xl font-display font-bold text-white mt-0.5">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidate Submissions Table Card -->
+      <div class="glass-card rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden backdrop-blur-md">
+        
+        <!-- Search & Filter Controls Toolbar -->
+        <div class="p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="relative flex-1 max-w-md">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+            <input type="text" id="filter-search" oninput="debounceCandidateFetch()" placeholder="Search candidates, roles, emails..." class="w-full bg-slate-950/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 text-xs">
+            <select id="filter-status" onchange="fetchCandidatesList()" class="bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 focus:outline-none focus:border-indigo-500">
+              <option value="all">All Statuses</option>
+              <option value="Shortlisted">Shortlisted</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Interview">Interview</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+
+            <select id="filter-score" onchange="fetchCandidatesList()" class="bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 focus:outline-none focus:border-indigo-500">
+              <option value="">All Scores</option>
+              <option value="80">80%+ (Top Matches)</option>
+              <option value="60">60%+ (Qualified)</option>
+              <option value="40">40%+ (Review Needed)</option>
+            </select>
+
+            <button onclick="fetchCandidatesList()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors" title="Refresh Candidates">
+              <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/70 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="px-6 py-3.5">Candidate</th>
+                <th class="px-6 py-3.5">Target Role</th>
+                <th class="px-6 py-3.5">Score</th>
+                <th class="px-6 py-3.5">Submitted</th>
+                <th class="px-6 py-3.5">Status</th>
+                <th class="px-6 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="candidates-table-body" class="divide-y divide-slate-800/60">
+              <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-slate-500">Loading candidates...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: JOB OPENINGS MANAGER -->
+    <!-- ============================================================ -->
+    <div id="tab-jobs" class="tab-content hidden space-y-6 animate-fade-in">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="font-display text-2xl font-bold text-white">Target Job Postings</h2>
+          <p class="text-sm text-slate-400 mt-1">Manage active openings used to evaluate incoming candidate resumes.</p>
+        </div>
+        <button onclick="openNewJobModal()" class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium shadow-lg shadow-indigo-600/30 transition-all">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add New Job Opening</span>
+        </button>
+      </div>
+
+      <!-- Job Cards Grid -->
+      <div id="job-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- TAB 4: ANALYTICS & TALENT INTELLIGENCE -->
+    <!-- ============================================================ -->
+    <div id="tab-analytics" class="tab-content hidden space-y-8 animate-fade-in">
+      <div>
+        <h2 class="font-display text-2xl font-bold text-white">Talent & Skill Analytics</h2>
+        <p class="text-sm text-slate-400 mt-1">Aggregated insights across candidate applicant pools and target requirements.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Chart 1: Candidate Score Distribution -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 bg-slate-900/60 backdrop-blur-md">
+          <h3 class="text-base font-semibold text-white mb-1 flex items-center space-x-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-400"></i>
+            <span>Candidate Score Distribution</span>
+          </h3>
+          <p class="text-xs text-slate-400 mb-4">Breakdown of applicant match tiers across all submissions</p>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="chart-score-dist"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: In-Demand vs Missing Skills -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 bg-slate-900/60 backdrop-blur-md">
+          <h3 class="text-base font-semibold text-white mb-1 flex items-center space-x-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-purple-400"></i>
+            <span>Top In-Demand Required Skills</span>
+          </h3>
+          <p class="text-xs text-slate-400 mb-4">Most frequently requested technical skills across active job postings</p>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="chart-skills-demand"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: CANDIDATE DETAIL MODAL -->
+  <!-- ============================================================ -->
+  <div id="candidate-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-4xl max-h-[90vh] rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden animate-scale-in">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold">
+            <i data-lucide="user-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="modal-candidate-name" class="font-display text-lg font-bold text-white"></h3>
+            <p id="modal-job-title" class="text-xs text-indigo-400"></p>
+          </div>
+        </div>
+        <button onclick="closeCandidateModal()" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 text-sm">
+        
+        <!-- Score Bar & Contacts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+          <div class="space-y-1.5 text-xs text-slate-300">
+            <p><span class="text-slate-500 font-medium">Email:</span> <span id="modal-email" class="text-white"></span></p>
+            <p><span class="text-slate-500 font-medium">Phone:</span> <span id="modal-phone" class="text-white"></span></p>
+            <p><span class="text-slate-500 font-medium">Experience:</span> <span id="modal-exp" class="text-indigo-400 font-semibold"></span></p>
+            <p><span class="text-slate-500 font-medium">File:</span> <span id="modal-file" class="text-slate-400 font-mono"></span></p>
+          </div>
+          <div class="flex items-center justify-end space-x-4 border-t md:border-t-0 md:border-l border-slate-800 pt-3 md:pt-0 md:pl-4">
+            <div class="text-right">
+              <p class="text-xs text-slate-400">Match Score</p>
+              <p id="modal-score" class="text-3xl font-display font-extrabold text-white"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Matched & Missing Skills -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/40">
+            <h4 class="text-xs uppercase font-semibold text-emerald-400 mb-2">Matched Skills</h4>
+            <div id="modal-matched-skills" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <div class="p-4 rounded-xl bg-rose-950/20 border border-rose-900/40">
+            <h4 class="text-xs uppercase font-semibold text-rose-400 mb-2">Missing Skills</h4>
+            <div id="modal-missing-skills" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+
+        <!-- Raw Resume Text Inspector -->
+        <div>
+          <h4 class="text-xs uppercase font-semibold text-slate-400 mb-2 flex items-center justify-between">
+            <span>Parsed Resume Content</span>
+            <span class="text-[10px] text-slate-500 lowercase">normalized text</span>
+          </h4>
+          <pre id="modal-raw-text" class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed"></pre>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-950/70 flex justify-end">
+        <button onclick="closeCandidateModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-colors">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- MODAL: CREATE NEW JOB POSTING -->
+  <!-- ============================================================ -->
+  <div id="job-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-xl rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden animate-scale-in">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <h3 class="font-display text-lg font-bold text-white flex items-center space-x-2">
+          <i data-lucide="briefcase" class="w-5 h-5 text-indigo-400"></i>
+          <span>Create New Job Opening</span>
+        </h3>
+        <button onclick="closeNewJobModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-new-job" onsubmit="submitNewJob(event)" class="p-6 space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Job Title *</label>
+          <input type="text" id="new-job-title" required placeholder="e.g. Senior Frontend Engineer" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Department</label>
+            <input type="text" id="new-job-dept" placeholder="Engineering" value="Software Engineering" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Experience Level</label>
+            <input type="text" id="new-job-exp" placeholder="Mid-Level (2-4 Yrs)" value="Mid-Level (2-4 Years)" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Required Skills (Comma-separated) *</label>
+          <input type="text" id="new-job-skills" required placeholder="Python, React, Docker, FastAPI, PostgreSQL" class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Full Job Description *</label>
+          <textarea id="new-job-desc" required rows="4" placeholder="Detail key responsibilities, qualifications, and stack..." class="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-2">
+          <button type="button" onclick="closeNewJobModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium shadow-lg shadow-indigo-600/30">Save Job Opening</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm shadow-2xl flex items-center space-x-2 transition-all">
+    <i id="toast-icon" data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
+    <span id="toast-msg"></span>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
